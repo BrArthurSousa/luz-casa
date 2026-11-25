@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#1e1b4b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  
+  <!-- Linha adicionada para o app reconhecer o manifesto -->
+  <link rel="manifest" href="manifest.json">
+  
+  <title>Luz de Casa</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      background: linear-gradient(160deg, #1e1b4b 0%, #311042 50%, #0f172a 100%);
+      color: #ffffff;
+      height: 100dvh;
+      width: 100vw;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: env(safe-area-inset-top, 24px) 24px env(safe-area-inset-bottom, 32px);
+      transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+      position: relative;
+    }
+
+    body.luz-on {
+      background: linear-gradient(160deg, #fef08a 0%, #fb923c 55%, #f43f5e 100%);
+      color: #1e1b4b;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 10px;
+      z-index: 2;
+    }
+
+    .title-group h1 {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.6px;
+    }
+
+    .title-group p {
+      font-size: 13px;
+      font-weight: 500;
+      opacity: 0.75;
+      margin-top: 2px;
+    }
+
+    .pill-status {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(255, 255, 255, 0.14);
+      backdrop-filter: blur(10px);
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    body.luz-on .pill-status {
+      background: rgba(255, 255, 255, 0.55);
+      color: #1e1b4b;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background-color: #ff4d4d;
+      transition: all 0.3s ease;
+    }
+
+    .dot.online {
+      background-color: #00e676;
+      box-shadow: 0 0 10px #00e676;
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+      position: relative;
+    }
+
+    .pulse-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pulse-ring {
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.35);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    body.luz-on .pulse-ring {
+      animation: pulsar 2.2s infinite ease-out;
+    }
+
+    @keyframes pulsar {
+      0% { transform: scale(0.95); opacity: 0.7; }
+      100% { transform: scale(1.65); opacity: 0; }
+    }
+
+    .bulb-ring {
+      width: 195px;
+      height: 195px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(12px);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      cursor: pointer;
+    }
+
+    .bulb-ring:active {
+      transform: scale(0.9);
+    }
+
+    .bulb-ring.disabled {
+      opacity: 0.55;
+      pointer-events: none;
+    }
+
+    body.luz-on .bulb-ring {
+      background: #ffffff;
+      border-color: #ffffff;
+      box-shadow: 0 20px 50px rgba(245, 158, 11, 0.5);
+      transform: scale(1.04);
+    }
+
+    .bulb-icon {
+      width: 82px;
+      height: 82px;
+      fill: rgba(255, 255, 255, 0.65);
+      transition: all 0.35s ease;
+    }
+
+    body.luz-on .bulb-icon {
+      fill: #f59e0b;
+      transform: scale(1.08);
+    }
+
+    .estado-label {
+      margin-top: 28px;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      opacity: 0.85;
+    }
+
+    footer {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 2;
+    }
+
+    .btn-main {
+      width: 100%;
+      height: 64px;
+      border: none;
+      border-radius: 22px;
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+    }
+
+    .btn-main:active {
+      transform: scale(0.94);
+    }
+
+    #btnConectar {
+      background: linear-gradient(135deg, #38bdf8 0%, #6366f1 100%);
+      color: #ffffff;
+      box-shadow: 0 12px 28px -4px rgba(99, 102, 241, 0.6);
+    }
+
+    #btnToggle {
+      display: none;
+      background: linear-gradient(135deg, #fbbf24 0%, #f97316 100%);
+      color: #ffffff;
+      box-shadow: 0 12px 28px -4px rgba(249, 115, 22, 0.55);
+    }
+
+    body.luz-on #btnToggle {
+      background: #1e1b4b;
+      color: #ffffff;
+      box-shadow: 0 12px 28px -4px rgba(30, 27, 75, 0.4);
+    }
+
+    #btnDesconectar {
+      display: none;
+      width: 100%;
+      padding: 10px;
+      background: transparent;
+      border: none;
+      color: inherit;
+      opacity: 0.7;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="title-group">
+      <h1>Luz de Casa</h1>
+      <p>Controle da Família</p>
+    </div>
+    <div class="pill-status">
+      <span class="dot" id="statusDot"></span>
+      <span id="statusText">Offline</span>
+    </div>
+  </header>
+
+  <main>
+    <div class="pulse-wrapper">
+      <div class="pulse-ring"></div>
+      <div class="bulb-ring disabled" id="bulbRing" onclick="alternarLuz()">
+        <svg class="bulb-icon" viewBox="0 0 24 24">
+          <path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/>
+        </svg>
+      </div>
+    </div>
+    <div class="estado-label" id="estadoTexto">Desconectado</div>
+  </main>
+
+  <footer>
+    <button class="btn-main" id="btnConectar" onclick="conectar()">
+      Conectar ao LED
+    </button>
+    <button class="btn-main" id="btnToggle" onclick="alternarLuz()">
+      ACENDER LUZ
+    </button>
+    <button id="btnDesconectar" onclick="desconectar()">
+      Desconectar celular
+    </button>
+  </footer>
+
+  <script>
+    const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
+    const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
+    
+    let dispositivoBLE;
+    let caracteristicaBLE;
+    let luzLigada = false;
+
+    function vibrar() {
+      if (navigator.vibrate) {
+        navigator.vibrate(45);
+      }
+    }
+
+    async function conectar() {
+      vibrar();
+      try {
+        document.getElementById('statusText').innerText = "Buscando...";
+        
+        dispositivoBLE = await navigator.bluetooth.requestDevice({
+          filters: [{ name: 'Luz_Casa' }],
+          optionalServices: [SERVICE_UUID]
+        });
+
+        dispositivoBLE.addEventListener('gattserverdisconnected', aoDesconectar);
+
+        const server = await dispositivoBLE.gatt.connect();
+        const service = await server.getPrimaryService(SERVICE_UUID);
+        caracteristicaBLE = await service.getCharacteristic(CHARACTERISTIC_UUID);
+
+        document.getElementById('statusDot').classList.add('online');
+        document.getElementById('statusText').innerText = "Conectado";
+        document.getElementById('estadoTexto').innerText = "Luz Apagada";
+        document.getElementById('bulbRing').classList.remove('disabled');
+        
+        document.getElementById('btnConectar').style.display = "none";
+        document.getElementById('btnToggle').style.display = "flex";
+        document.getElementById('btnDesconectar').style.display = "block";
+
+      } catch (erro) {
+        document.getElementById('statusText').innerText = "Offline";
+        console.error(erro);
+      }
+    }
+
+    async function alternarLuz() {
+      if (!caracteristicaBLE) return;
+      vibrar();
+      
+      const novoEstado = !luzLigada;
+      const comando = novoEstado ? '1' : '0';
+
+      try {
+        const encoder = new TextEncoder();
+        await caracteristicaBLE.writeValue(encoder.encode(comando));
+        
+        luzLigada = novoEstado;
+        atualizarVisualLuz();
+      } catch (erro) {
+        alert("Conexão perdida. Tente conectar novamente.");
+      }
+    }
+
+    function atualizarVisualLuz() {
+      const btnToggle = document.getElementById('btnToggle');
+      const estadoTexto = document.getElementById('estadoTexto');
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+
+      if (luzLigada) {
+        document.body.classList.add('luz-on');
+        btnToggle.innerText = "APAGAR LUZ";
+        estadoTexto.innerText = "Luz Acesa";
+        metaTheme.setAttribute("content", "#fef08a");
+      } else {
+        document.body.classList.remove('luz-on');
+        btnToggle.innerText = "ACENDER LUZ";
+        estadoTexto.innerText = "Luz Apagada";
+        metaTheme.setAttribute("content", "#1e1b4b");
+      }
+    }
+
+    function desconectar() {
+      vibrar();
+      if (dispositivoBLE && dispositivoBLE.gatt.connected) {
+        dispositivoBLE.gatt.disconnect();
+      }
+    }
+
+    function aoDesconectar() {
+      luzLigada = false;
+      atualizarVisualLuz();
+      
+      document.getElementById('statusDot').classList.remove('online');
+      document.getElementById('statusText').innerText = "Offline";
+      document.getElementById('estadoTexto').innerText = "Desconectado";
+      document.getElementById('bulbRing').classList.add('disabled');
+      
+      document.getElementById('btnConectar').style.display = "flex";
+      document.getElementById('btnToggle').style.display = "none";
+      document.getElementById('btnDesconectar').style.display = "none";
+    }
+
+    // Registro do Service Worker para o PWABuilder aceitar gerar o APK
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
+
+</body>
+</html>
